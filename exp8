@@ -1,0 +1,28 @@
+import paho.mqtt.client as mqtt
+import random
+import time
+
+client = mqtt.Client()
+client.connect("localhost", 1883, 60)
+
+def publish_sensor_data():
+    temperature = random.randint(20, 30)
+    humidity = random.randint(30, 70)
+    air_quality = random.randint(50, 100)
+
+    client.publish("environment/temperature", temperature)
+    client.publish("environment/humidity", humidity)
+    client.publish("environment/air_quality", air_quality)
+
+    print(f"Temperature: {temperature}°C, Humidity: {humidity}%, Air Quality: {air_quality}")
+
+while True:
+    publish_sensor_data()
+    time.sleep(5)
+
+
+# Temperature: 25°C, Humidity: 45%, Air Quality: 72
+# Temperature: 28°C, Humidity: 60%, Air Quality: 80
+# Temperature: 22°C, Humidity: 50%, Air Quality: 65
+# Temperature: 24°C, Humidity: 35%, Air Quality: 90
+# ...

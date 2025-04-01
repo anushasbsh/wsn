@@ -1,0 +1,52 @@
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/applications-module.h"
+
+using namespace ns3;
+
+void ReceivePacket(Ptr<Socket> socket) {
+    Ptr<Packet> packet = socket->Recv();
+    NS_LOG_UNCOND(packet->GetSize() > 1024 ? "Intrusion detected!" : "Normal packet received.");
+}
+
+int main() {
+    NodeContainer nodes;
+    nodes.Create(3);
+
+    PointToPointHelper p2p;
+    p2p.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
+    p2p.SetChannelAttribute("Delay", StringValue("2ms"));
+    NetDeviceContainer devices = p2p.Install(nodes);
+
+    InternetStackHelper().Install(nodes);
+    Ipv4InterfaceContainer interfaces = Ipv4AddressHelper("10.1.1.0", "255.255.255.0").Assign(devices);
+
+    uint16_t port = 9;
+    UdpServerHelper server(port);
+    server.Install(nodes.Get(1)).Start(Seconds(1.0)).Stop(Seconds(10.0));
+
+    UdpClientHelper client(interfaces.GetAddress(1), port);
+    client.SetAttribute("MaxPackets", UintegerValue(10));
+    client.SetAttribute("Interval", TimeValue(Seconds(1.0)));
+    client.SetAttribute("PacketSize", UintegerValue(512));
+    client.Install(nodes.Get(0)).Start(Seconds(2.0)).Stop(Seconds(10.0));
+
+    Ptr<Socket> recvSocket = Socket::CreateSocket(nodes.Get(1), TypeId::LookupByName("ns3::UdpSocketFactory"));
+    recvSocket->Bind(InetSocketAddress(Ipv4Address::GetAny(), port));
+    recvSocket->SetRecvCallback(MakeCallback(&ReceivePacket));
+
+    Simulator::Run();
+    Simulator::Destroy();
+}
+
+
+// Normal packet received.
+// Normal packet received.
+// Normal packet received.
+// ...
+// (Repeats for 10 packets as each packet size is 512 bytes, below the 1024-byte threshold.)
+
+// If a packet exceeds 1024 bytes, it would log:
+// Intrusion detected !

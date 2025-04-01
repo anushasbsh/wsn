@@ -1,0 +1,14 @@
+import paho.mqtt.client as mqtt
+
+client = mqtt.Client()
+client.connect("localhost", 1883, 60)
+
+def control_light(state):
+    client.publish("home/lights", state)
+    print(f"Light turned {state}")
+
+control_light("ON")
+control_light("OFF")
+
+# Light turned ON
+# Light turned OFF

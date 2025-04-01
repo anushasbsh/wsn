@@ -1,0 +1,59 @@
+#include <DHT.h>
+#define DHTPIN 2      
+#define DHTTYPE DHT11  
+DHT dht(DHTPIN, DHTTYPE);
+void setup() {
+    Serial.begin(9600);
+    dht.begin();
+}
+void loop() {
+    float temperature = dht.readTemperature(); 
+    float humidity = dht.readHumidity(); 
+    if (isnan(temperature) || isnan(humidity)) {
+        Serial.println("Failed to read from DHT sensor!");
+        return;
+    }
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.print(" °C, Humidity: ");
+    Serial.print(humidity);
+    Serial.println(" %");
+    delay(2000);
+}
+
+-----
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+data = pd.read_csv("sensor_data.csv")
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(data['Time'], data['Temperature'], label='Temperature (*C)')
+plt.plot(data['Time'], data['Humidity'], label='Humidity (%)')
+
+plt.xlabel('Time (s)')
+plt.ylabel('Value')
+plt.title('Temperature and Humidity Over Time')
+
+plt.legend()
+plt.grid()
+
+plt.show()
+
+
+Temperature: 25.3 °C, Humidity: 60.5 %
+Temperature: 25.4 °C, Humidity: 60.3 %
+Temperature: 25.3 °C, Humidity: 60.2 %
+Temperature: 25.2 °C, Humidity: 60.1 %
+...
+(Updates every 2 seconds)
+
+
+// Time,Temperature,Humidity
+// 1,25.3,60.5
+// 3,25.4,60.3
+// 5,25.3,60.2
+// 7,25.2,60.1
+// ...

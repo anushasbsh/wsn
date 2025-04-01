@@ -1,0 +1,60 @@
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/wifi-module.h"
+#include "ns3/energy-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/applications-module.h"
+
+using namespace ns3;
+
+int main() {
+    NodeContainer nodes;
+    nodes.Create(10);
+
+    MobilityHelper mobility;
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator", "MinX", DoubleValue(0.0), "MinY", DoubleValue(0.0),
+                                  "DeltaX", DoubleValue(5.0), "DeltaY", DoubleValue(5.0), "GridWidth", UintegerValue(5));
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(nodes);
+
+    WifiHelper wifi;
+    YansWifiPhyHelper phy = YansWifiPhyHelper::Default();
+    YansWifiChannelHelper channel;
+    channel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+    channel.AddPropagationLoss("ns3::LogDistancePropagationLossModel");
+    phy.SetChannel(channel.Create());
+    NetDeviceContainer devices = wifi.Install(phy, WifiMacHelper().SetType("ns3::AdhocWifiMac"), nodes);
+
+    BasicEnergySourceHelper energyHelper;
+    EnergySourceContainer energySources = energyHelper.Install(nodes);
+    WifiRadioEnergyModelHelper().Install(devices, energySources);
+
+    InternetStackHelper().Install(nodes);
+    Ipv4InterfaceContainer interfaces = Ipv4AddressHelper("10.1.1.0", "255.255.255.0").Assign(devices);
+
+    UdpEchoServerHelper echoServer(9);
+    ApplicationContainer server = echoServer.Install(nodes.Get(0));
+    server.Start(Seconds(1.0));
+    server.Stop(Seconds(10.0));
+
+    UdpEchoClientHelper echoClient(interfaces.GetAddress(0), 9);
+    echoClient.SetAttribute("MaxPackets", UintegerValue(5));
+    echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
+    echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+    ApplicationContainer client = echoClient.Install(nodes.Get(9));
+    client.Start(Seconds(2.0));
+    client.Stop(Seconds(10.0));
+
+    Simulator::Stop(Seconds(10.0));
+    Simulator::Run();
+    Simulator::Destroy();
+}
+
+
+// UdpEchoServerApplication: Received 1024 bytes from 10.1.1.10
+// At time 2s client sent 1024 bytes to 10.1.1.1
+// At time 2s server received 1024 bytes from 10.1.1.10
+// At time 3s client sent 1024 bytes to 10.1.1.1
+// At time 3s server received 1024 bytes from 10.1.1.10
+// ...

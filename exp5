@@ -1,0 +1,33 @@
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/wifi-module.h"
+
+using namespace ns3;
+using namespace std;
+
+Vector EstimatePosition(Vector anchor1, Vector anchor2, Vector anchor3, double d1, double d2, double d3) {
+    double x = (anchor1.x + anchor2.x + anchor3.x) / 3.0;
+    double y = (anchor1.y + anchor2.y + anchor3.y) / 3.0;
+    return Vector(x, y, 0);
+}
+
+int main(int argc, char *argv[]) {
+    Vector anchor1(0, 0, 0);
+    Vector anchor2(100, 0, 0);
+    Vector anchor3(50, 50, 0);
+
+    double d1 = 10.0, d2 = 10.0, d3 = 10.0;
+
+    Vector estimatedPosition = EstimatePosition(anchor1, anchor2, anchor3, d1, d2, d3);
+
+    cout << "Estimated Position: " << estimatedPosition << endl;
+
+    Simulator::Run();
+    Simulator::Destroy();
+    return 0;
+}
+
+// Estimated Position: (50, 16.6667, 0)
